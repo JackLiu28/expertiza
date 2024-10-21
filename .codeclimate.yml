@@ -35,9 +35,11 @@ ratings:
   - "**.rb"
   - "**.rhtml"
 exclude_paths:
+- '**/spec/'
 - 'bin/**/*'
 - 'config/**/*'
 - 'db/**/*'
 - 'lib/**/*'
 - 'public/**/*'
 - 'vendor/**/*'
+- ''
