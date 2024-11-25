@@ -97,4 +97,16 @@ class SignedUpTeam < ApplicationRecord
     SignedUpTeam.where(team_id: team_id, is_waitlisted: true).destroy_all
   end
 
+  def self.users_on_waiting_list
+    waitlisted_signed_up_teams = SignedUpTeam.where(topic_id: id, is_waitlisted: 1)
+    waitlisted_users = []
+    if waitlisted_signed_up_teams.present?
+      waitlisted_signed_up_teams.each do |waitlisted_signed_up_team|
+        assignment_team = AssignmentTeam.find(waitlisted_signed_up_team.team_id)
+        waitlisted_users << assignment_team.users
+      end
+    end
+    waitlisted_users.flatten
+  end
+
 end

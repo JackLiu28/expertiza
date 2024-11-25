@@ -30,6 +30,46 @@ class Team < ApplicationRecord
     end
   end
 
+  def longest_waiting_team(topic_id)
+    # Find and return the team that has been waiting the longest for the specified topic.
+
+    # Find the first waitlisted user (team) for the given topic by querying the SignedUpTeam table.
+    # Check for records where the topic_id matches the specified topic_id and is_waitlisted is true.
+    first_waitlisted_user = SignedUpTeam.where(topic_id: topic_id, is_waitlisted: true).first
+    # If a waitlisted user (team) is found, return it as the team that has been waiting the longest.
+    unless first_waitlisted_user.nil?
+      return first_waitlisted_user
+    end
+    # If no waitlisted user is found, return nil to indicate that there are no teams waiting.
+    return nil
+  end
+
+  def reassign_topic(team_id)
+    # Reassigns topic when a team is dropped from a topic.
+    # Get the topic ID for reassignment.
+    topic_id = self.id
+    # Fetch the record in SignedUpTeam where topic_id matches the topic that needs reassignment
+    # and team_id matches the provided team_id. Retrieve the first matching record.
+    signup_record = SignedUpTeam.where(topic_id: topic_id, team_id:  team_id).first
+    # If the signup record is not marked as waitlisted (is_waitlisted is either false or nil),
+    # proceed with reassignment.
+    unless signup_record.try(:is_waitlisted)
+      # Find the longest waiting team for the same topic.
+      longest_waiting_team  = longest_waiting_team(topic_id)
+      # If a longest waiting team is found, proceed with reassignment.
+      unless longest_waiting_team.nil?
+        # Assign the topic to the longest waiting team.
+        # Update the is_waitlisted boolean to false for the longest waiting team.
+        longest_waiting_team.is_waitlisted = false
+        longest_waiting_team.save
+        # Drop all waitlisted records for that team.
+        SignedUpTeam.drop_off_waitlists(longest_waiting_team.team_id)
+      end
+    end
+    # Delete the entry for the team that was either previously assigned or waiting.
+    SignedUpTeam.drop_signup_record(topic_id, team_id)
+  end
+
   # enum method for team clone operations
   def self.team_operation
     { inherit: 'inherit', bequeath: 'bequeath' }.freeze
